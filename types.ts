@@ -1,4 +1,4 @@
-export type Parameters<T = any> = T[]
+export type Parameters<T extends any[] = any[]> = T
 
 export interface JsonRpcRequest {
   method: string

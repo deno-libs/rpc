@@ -71,7 +71,7 @@ export class App {
    * @param method method name
    * @param handler method handler
    */
-  method(method: string, handler: (params: Parameters, clientId: string) => Promise<any>) {
+  method<T = any>(method: string, handler: (params: Parameters<T>, clientId: string) => any | Promise<any>) {
     this.methods.set(method, handler)
   }
 
@@ -88,7 +88,7 @@ export class App {
     const requests = parseRequest(data)
     if (requests === 'parse-error') return send(sock, { id: null, error: { code: -32700, message: 'Parse error' } })
 
-    const responses: any[] = []
+    const responses: unknown[] = []
 
     const promises = requests.map(async (request) => {
       if (request === 'invalid')

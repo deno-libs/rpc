@@ -8,6 +8,11 @@
 
 JSONRPC server implementation with native WebSocket, based on [jsonrpc](https://github.com/Vehmloewff/jsonrpc).
 
+## Features
+
+- No dependencies
+- Typed parameters
+
 ## Example
 
 ```ts
@@ -15,7 +20,7 @@ import { App } from 'https://x.nest.land/rpc/mod.ts'
 
 const app = new App()
 
-app.method('hello', (params) => {
+app.method<[string]>('hello', (params) => {
   return `Hello ${params[0]}`
 })
 

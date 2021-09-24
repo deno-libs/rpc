@@ -1,6 +1,7 @@
 import { JsonRpcRequest } from './types.ts'
 import { makeArray } from './utils.ts'
 
+// deno-lint-ignore no-explicit-any
 export function send(socket: WebSocket, message: any) {
   const messages = makeArray(message)
   messages.forEach((message) => {
@@ -15,7 +16,7 @@ export function parseRequest(json: string): (JsonRpcRequest | 'invalid')[] | 'pa
     const arr = makeArray(JSON.parse(json))
     const res: (JsonRpcRequest | 'invalid')[] = []
 
-    for (let obj of arr) {
+    for (const obj of arr) {
       if (typeof obj !== 'object') res.push('invalid')
       else if (!obj) res.push('invalid')
       else if (obj.jsonrpc !== '2.0') res.push('invalid')
@@ -26,7 +27,7 @@ export function parseRequest(json: string): (JsonRpcRequest | 'invalid')[] | 'pa
     if (!res.length) return ['invalid']
 
     return res
-  } catch (e) {
+  } catch {
     return 'parse-error'
   }
 }

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://x.nest.land/eggs@0.3.8/src/schema.json",
+  "name": "rpc",
+  "entry": "./mod.ts",
+  "description": "📡 JSONRPC server implementation for Deno",
+  "homepage": "https://github.com/deno-libs/rpc",
+  "version": "0.0.0",
+  "releaseType": null,
+  "unstable": false,
+  "unlisted": false,
+  "files": [
+    "README.md",
+    "*.ts",
+    "LICENSE"
+  ],
+  "ignore": [],
+  "checkFormat": false,
+  "checkTests": false,
+  "checkInstallation": true,
+  "check": true
+}

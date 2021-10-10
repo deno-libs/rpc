@@ -1,12 +1,13 @@
-export type Parameters<T extends any[] = any[]> = T
-
-export interface JsonRpcRequest {
+export interface JsonRpcRequest<T extends any[] = any[]> {
   method: string
   id?: string
-  params: Parameters
+  params: T
 }
 
-export type ClientAdded = (params: Parameters, socket: WebSocket) => Promise<{ error: ErrorResponse } | string | null>
+export type ClientAdded = <T extends any[] = any[]>(
+  params: T,
+  socket: WebSocket
+) => Promise<{ error: ErrorResponse } | string | null>
 
 export interface RPCOptions {
   /**
@@ -35,8 +36,8 @@ export interface RPCOptions {
   timeout?: number
 }
 
-export interface ErrorResponse {
+export interface ErrorResponse<T extends any[] = any[]> {
   code: number
   message: string
-  data?: Parameters
+  data?: T
 }

@@ -1,5 +1,5 @@
 import { parseRequest, send } from './request.ts'
-import type { Parameters, RPCOptions } from './types.ts'
+import type { RPCOptions } from './types.ts'
 import { lazyJSONParse, paramsEncoder } from './utils.ts'
 
 export class App {
@@ -7,8 +7,8 @@ export class App {
   listener?: Deno.Listener
   options: RPCOptions
   socks: Map<string, WebSocket>
-  methods: Map<string, (params: Parameters, clientId: string) => Promise<any>>
-  emitters: Map<string, (params: Parameters, emit: (data: any) => void, clientId: string) => void>
+  methods: Map<string, (params: any[], clientId: string) => Promise<any>>
+  emitters: Map<string, (params: any[], emit: (data: any) => void, clientId: string) => void>
   timeout: number
   constructor(options: RPCOptions = { path: '/' }) {
     this.options = options
@@ -71,8 +71,8 @@ export class App {
    * @param method method name
    * @param handler method handler
    */
-  method<T = any>(method: string, handler: (params: Parameters<T>, clientId: string) => any | Promise<any>) {
-    this.methods.set(method, handler)
+  method<T extends any[] = any[]>(method: string, handler: (params: T, clientId: string) => any | Promise<any>) {
+    this.methods.set(method, handler as any)
   }
 
   /**

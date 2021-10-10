@@ -23,7 +23,7 @@ export function makeEncryptor(key: string) {
 export function lazyJSONParse(json: string): any {
   try {
     return JSON.parse(json)
-  } catch (e) {
+  } catch {
     return {}
   }
 }

@@ -17,10 +17,8 @@ export function parseRequest(json: string): (JsonRpcRequest | 'invalid')[] | 'pa
     const res: (JsonRpcRequest | 'invalid')[] = []
 
     for (const obj of arr) {
-      if (typeof obj !== 'object') res.push('invalid')
-      else if (!obj) res.push('invalid')
-      else if (obj.jsonrpc !== '2.0') res.push('invalid')
-      else if (typeof obj.method !== 'string') res.push('invalid')
+      if (typeof obj !== 'object' || !obj || obj.jsonrpc !== '2.0' || typeof obj.method !== 'string')
+        res.push('invalid')
       else res.push(obj)
     }
 

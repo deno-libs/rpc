@@ -9,13 +9,13 @@ export class App {
   socks: Map<string, WebSocket>
   methods: Map<string, (params: any[], clientId: string) => Promise<any>>
   emitters: Map<string, (params: any[], emit: (data: any) => void, clientId: string) => void>
-  timeout: number
+  #timeout: number
   constructor(options: RPCOptions = { path: '/' }) {
     this.options = options
     this.socks = new Map()
     this.methods = new Map()
     this.emitters = new Map()
-    this.timeout = options.timeout || 1000 * 60 * 60 * 24
+    this.#timeout = options.timeout || 1000 * 60 * 60 * 24
   }
   /**
    * Upgrade a request to WebSocket and handle it
@@ -42,11 +42,11 @@ export class App {
     this.socks.set(clientId, socket)
 
     // Close the socket after timeout
-    setTimeout(() => socket.close(), this.timeout)
+    setTimeout(() => socket.close(), this.#timeout)
 
     socket.onmessage = ({ data }) => {
       if (typeof data === 'string') {
-        send(socket, this.handleRPCMethod(clientId as string, data))
+        send(socket, this.#handleRPCMethod(clientId as string, data))
       } else if (data instanceof Uint8Array) {
         console.warn('Warn: an invalid jsonrpc message was sent.  Skipping.')
       }
@@ -80,7 +80,7 @@ export class App {
    * @param client client ID
    * @param data Received data
    */
-  async handleRPCMethod(client: string, data: string) {
+  async #handleRPCMethod(client: string, data: string) {
     const sock = this.socks.get(client)
 
     if (!sock) return console.warn(`Warn: recieved a request from and undefined connection`)
@@ -150,5 +150,12 @@ export class App {
     if (e) {
       e.respondWith(this.handle(e.request))
     }
+  }
+  /**
+   * Close the server
+   */
+  close() {
+    this.httpConn?.close()
+    this.listener?.close()
   }
 }

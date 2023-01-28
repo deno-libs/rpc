@@ -4,8 +4,8 @@
   "entry": "./mod.ts",
   "description": "📡 JSONRPC server implementation for Deno",
   "homepage": "https://github.com/deno-libs/rpc",
-  "version": "0.0.4",
-  "releaseType": null,
+  "version": "0.1.1",
+  "releaseType": "patch",
   "unstable": false,
   "unlisted": false,
   "files": [
@@ -17,5 +17,7 @@
   "checkFormat": false,
   "checkTests": false,
   "checkInstallation": true,
-  "check": true
+  "check": true,
+  "checkAll": true,
+  "repository": "https://github.com/deno-libs/rpc"
 }

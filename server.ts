@@ -1,5 +1,5 @@
 import { parseRequest, send } from './request.ts'
-import type { RPCOptions } from './types.ts'
+import type { Message, RPCOptions } from './types.ts'
 import { lazyJSONParse, paramsEncoder } from './utils.ts'
 
 export class App {
@@ -8,7 +8,10 @@ export class App {
   options: RPCOptions
   socks: Map<string, WebSocket>
   methods: Map<string, (params: any[], clientId: string) => Promise<any>>
-  emitters: Map<string, (params: any[], emit: (data: any) => void, clientId: string) => void>
+  emitters: Map<
+    string,
+    (params: any[], emit: (data: any) => void, clientId: string) => void
+  >
   #timeout: number
   constructor(options: RPCOptions = { path: '/' }) {
     this.options = options
@@ -27,9 +30,15 @@ export class App {
 
     const protocolHeader = request.headers.get('sec-websocket-protocol')
 
-    const incomingParamaters = protocolHeader ? lazyJSONParse(paramsEncoder.decrypt(protocolHeader)) : {}
+    const incomingParamaters = protocolHeader
+      ? lazyJSONParse(paramsEncoder.decrypt(protocolHeader))
+      : {}
 
-    let clientId = await (this.options.clientAdded || (() => crypto.randomUUID()))(incomingParamaters, socket)
+    let clientId =
+      await (this.options.clientAdded || (() => crypto.randomUUID()))(
+        incomingParamaters,
+        socket,
+      )
 
     if (!clientId) clientId = crypto.randomUUID()
 
@@ -46,14 +55,16 @@ export class App {
 
     socket.onmessage = ({ data }) => {
       if (typeof data === 'string') {
-        send(socket, this.#handleRPCMethod(clientId as string, data))
+        this.#handleRPCMethod(clientId as string, data)
       } else if (data instanceof Uint8Array) {
         console.warn('Warn: an invalid jsonrpc message was sent.  Skipping.')
       }
     }
 
     socket.onclose = async () => {
-      if (this.options.clientRemoved) await this.options.clientRemoved(clientId as string)
+      if (this.options.clientRemoved) {
+        await this.options.clientRemoved(clientId as string)
+      }
       this.socks.delete(clientId as string)
     }
 
@@ -71,7 +82,10 @@ export class App {
    * @param method method name
    * @param handler method handler
    */
-  method<T extends any[] = any[]>(method: string, handler: (params: T, clientId: string) => any | Promise<any>) {
+  method<T extends unknown[] = unknown[]>(
+    method: string,
+    handler: (params: T, clientId: string) => unknown | Promise<unknown>,
+  ) {
     this.methods.set(method, handler as any)
   }
 
@@ -83,24 +97,41 @@ export class App {
   async #handleRPCMethod(client: string, data: string) {
     const sock = this.socks.get(client)
 
-    if (!sock) return console.warn(`Warn: recieved a request from and undefined connection`)
+    if (!sock) {
+      return console.warn(
+        `Warn: recieved a request from and undefined connection`,
+      )
+    }
 
     const requests = parseRequest(data)
-    if (requests === 'parse-error') return send(sock, { id: null, error: { code: -32700, message: 'Parse error' } })
+    if (requests === 'parse-error') {
+      return send(sock, {
+        id: null,
+        error: { code: -32700, message: 'Parse error' },
+      })
+    }
 
-    const responses: unknown[] = []
+    const responses: Message[] = []
 
     const promises = requests.map(async (request) => {
-      if (request === 'invalid')
-        return responses.push({ id: null, error: { code: -32600, message: 'Invalid Request' } })
+      if (request === 'invalid') {
+        return responses.push({
+          id: null,
+          error: { code: -32600, message: 'Invalid Request' },
+        })
+      }
 
       if (!request.method.endsWith(':')) {
         const handler = this.methods.get(request.method)
 
-        if (!handler)
-          if (request.id !== undefined)
-            return responses.push({ error: { code: -32601, message: 'Method not found' }, id: request.id })
-          else return
+        if (!handler) {
+          if (request.id !== undefined) {
+            return responses.push({
+              error: { code: -32601, message: 'Method not found' },
+              id: request.id,
+            })
+          } else return
+        }
         const result = await handler(request.params, client)
 
         if (request.id !== undefined) responses.push({ id: request.id, result })
@@ -108,10 +139,14 @@ export class App {
         // It's an emitter
         const handler = this.emitters.get(request.method)
 
-        if (!handler)
-          if (request.id !== undefined)
-            return responses.push({ error: { code: -32601, message: 'Emitter not found' }, id: request.id })
-          else return
+        if (!handler) {
+          if (request.id !== undefined) {
+            return responses.push({
+              error: { code: -32601, message: 'Emitter not found' },
+              id: request.id,
+            })
+          } else return
+        }
 
         // Because emitters can return a value at any time, we are going to have to send messages on their schedule.
         // This may break batches, but I don't think that is a big deal
@@ -120,7 +155,7 @@ export class App {
           (data) => {
             send(sock, { result: data, id: request.id })
           },
-          client
+          client,
         )
       }
     })

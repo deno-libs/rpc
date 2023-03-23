@@ -1,9 +1,11 @@
 export const makeArray = <T>(val: T | T[]) => (Array.isArray(val) ? val : [val])
 
 export function makeEncryptor(key: string) {
-  const textToChars = (text: string) => text.split('').map((c) => c.charCodeAt(0))
+  const textToChars = (text: string) =>
+    text.split('').map((c) => c.charCodeAt(0))
   const byteHex = (n: number) => ('0' + Number(n).toString(16)).substring(-2)
-  const applyKeyToChar = (code: number) => textToChars(key).reduce((a, b) => a ^ b, code)
+  const applyKeyToChar = (code: number) =>
+    textToChars(key).reduce((a, b) => a ^ b, code)
 
   function decrypt(encoded: string) {
     return (encoded.match(/.{1,2}/g) || [])

@@ -6,7 +6,7 @@
 
 </div>
 
-JSONRPC server implementation with native WebSocket, based on [jsonrpc](https://github.com/Vehmloewff/jsonrpc).
+ JSONRPC server router for Deno using native WebSocket, based on [jsonrpc](https://github.com/Vehmloewff/jsonrpc).
 
 ## Features
 

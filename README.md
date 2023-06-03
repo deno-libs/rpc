@@ -2,7 +2,7 @@
 
 # rpc
 
-[![nest badge][nest-badge]](https://nest.land/package/rpc) [![][docs-badge]][docs] [![][code-quality-img]][code-quality]
+[![nest badge][nest-badge]](https://nest.land/package/rpc@0.1.1/mod.ts) [![][docs-badge]][docs] [![][code-quality-img]][code-quality]
 
 </div>
 

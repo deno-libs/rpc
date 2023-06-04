@@ -1,7 +1,7 @@
 export interface JsonRpcRequest<T extends unknown[] = unknown[]> {
   method: string
   id?: string
-  params: T
+  params?: T
 }
 
 export type JsonRpcError = {

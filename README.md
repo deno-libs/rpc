@@ -17,7 +17,7 @@ JSONRPC server router for Deno using native WebSocket, based on
 ## Example
 
 ```ts
-import { App } from 'https://x.nest.land/rpc/mod.ts'
+import { App } from 'https://deno.land/x/rpc/app.ts'
 
 const app = new App()
 
@@ -27,6 +27,8 @@ app.method<[string]>('hello', (params) => {
 
 app.listen({ port: 8080, hostname: '0.0.0.0' })
 ```
+
+See client-server example [here](/example)
 
 [docs-badge]: https://img.shields.io/github/v/release/deno-libs/rpc?label=Docs&logo=deno&style=for-the-badge&color=black
 [docs]: https://doc.deno.land/https/deno.land/x/rpc/mod.ts

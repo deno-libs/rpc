@@ -1,5 +1,5 @@
 import { parseRequest, send } from './request.ts'
-import type { Message, RPCOptions } from './types.ts'
+import type { JsonRpcResponse, RPCOptions } from './types.ts'
 import { lazyJSONParse, paramsEncoder } from './utils.ts'
 
 export class App {
@@ -7,10 +7,13 @@ export class App {
   listener?: Deno.Listener
   options: RPCOptions
   socks: Map<string, WebSocket>
-  methods: Map<string, (params: any[], clientId: string) => Promise<any>>
+  methods: Map<
+    string,
+    (params: unknown[], clientId: string) => unknown | Promise<unknown>
+  >
   emitters: Map<
     string,
-    (params: any[], emit: (data: any) => void, clientId: string) => void
+    (params: unknown[], emit: (data: unknown) => void, clientId: string) => void
   >
   #timeout: number
   constructor(options: RPCOptions = { path: '/' }) {
@@ -56,8 +59,8 @@ export class App {
     socket.onmessage = ({ data }) => {
       if (typeof data === 'string') {
         this.#handleRPCMethod(clientId as string, data)
-      } else if (data instanceof Uint8Array) {
-        console.warn('Warn: an invalid jsonrpc message was sent.  Skipping.')
+      } else {
+        console.warn('Warn: an invalid jsonrpc message was sent. Skipping.')
       }
     }
 
@@ -86,7 +89,13 @@ export class App {
     method: string,
     handler: (params: T, clientId: string) => unknown | Promise<unknown>,
   ) {
-    this.methods.set(method, handler as any)
+    this.methods.set(
+      method,
+      handler as (
+        params: unknown,
+        clientId: string,
+      ) => unknown | Promise<unknown>,
+    )
   }
 
   /**
@@ -102,7 +111,6 @@ export class App {
         `Warn: recieved a request from and undefined connection`,
       )
     }
-
     const requests = parseRequest(data)
     if (requests === 'parse-error') {
       return send(sock, {
@@ -111,7 +119,7 @@ export class App {
       })
     }
 
-    const responses: Message[] = []
+    const responses: JsonRpcResponse[] = []
 
     const promises = requests.map(async (request) => {
       if (request === 'invalid') {
@@ -125,27 +133,22 @@ export class App {
         const handler = this.methods.get(request.method)
 
         if (!handler) {
-          if (request.id !== undefined) {
-            return responses.push({
-              error: { code: -32601, message: 'Method not found' },
-              id: request.id,
-            })
-          } else return
+          return responses.push({
+            error: { code: -32601, message: 'Method not found' },
+            id: request.id!,
+          })
         }
         const result = await handler(request.params, client)
-
-        if (request.id !== undefined) responses.push({ id: request.id, result })
+        responses.push({ id: request.id!, result })
       } else {
         // It's an emitter
         const handler = this.emitters.get(request.method)
 
         if (!handler) {
-          if (request.id !== undefined) {
-            return responses.push({
-              error: { code: -32601, message: 'Emitter not found' },
-              id: request.id,
-            })
-          } else return
+          return responses.push({
+            error: { code: -32601, message: 'Emitter not found' },
+            id: request.id!,
+          })
         }
 
         // Because emitters can return a value at any time, we are going to have to send messages on their schedule.
@@ -153,7 +156,7 @@ export class App {
         handler(
           request.params,
           (data) => {
-            send(sock, { result: data, id: request.id })
+            send(sock, { result: data, id: request.id || null })
           },
           client,
         )
@@ -170,20 +173,18 @@ export class App {
    * @param options `Deno.listen` options
    * @param cb Callback that triggers after HTTP server is started
    */
-  async listen(options: Deno.ListenOptions, cb?: () => void) {
+  async listen(options: Deno.ListenOptions, cb?: (addr: Deno.NetAddr) => void) {
     const listener = Deno.listen(options)
+    cb?.(listener.addr as Deno.NetAddr)
 
-    const httpConn = Deno.serveHttp(await listener.accept())
-
-    this.httpConn = httpConn
-    this.listener = listener
-
-    cb?.()
-
-    const e = await httpConn.nextRequest()
-
-    if (e) {
-      e.respondWith(this.handle(e.request))
+    for await (const conn of listener) {
+      const requests = Deno.serveHttp(conn)
+      for await (const { request, respondWith } of requests) {
+        const response = await this.handle(request)
+        if (response) {
+          respondWith(response)
+        }
+      }
     }
   }
   /**

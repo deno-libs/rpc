@@ -2,11 +2,13 @@
 
 # rpc
 
-[![nest badge][nest-badge]](https://nest.land/package/rpc) [![][docs-badge]][docs] [![][code-quality-img]][code-quality]
+[![nest badge][nest-badge]](https://nest.land/package/rpc)
+[![][docs-badge]][docs] [![][code-quality-img]][code-quality]
 
 </div>
 
- JSONRPC server router for Deno using native WebSocket, based on [jsonrpc](https://github.com/Vehmloewff/jsonrpc).
+JSONRPC server router for Deno using native WebSocket, based on
+[jsonrpc](https://github.com/Vehmloewff/jsonrpc).
 
 ## Features
 

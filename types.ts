@@ -4,12 +4,24 @@ export interface JsonRpcRequest<T extends unknown[] = unknown[]> {
   params: T
 }
 
+export type JsonRpcError = {
+  name?: string
+  code: number
+  message: string
+}
+
+export type JsonRpcResponse<T extends unknown = unknown> =
+  & ({
+    result: T | null
+  } | { error: JsonRpcError | null })
+  & { jsonrpc?: '2.0'; id: string | null }
+
 export type ClientAdded = <T extends unknown[] = unknown[]>(
   params: T,
   socket: WebSocket,
-) => Promise<{ error: ErrorResponse } | string | null>
+) => Promise<{ error: JsonRpcError } | string | null>
 
-export interface RPCOptions {
+export type RPCOptions = Partial<{
   /**
    * Creates an ID for a specific client.
    *
@@ -19,11 +31,11 @@ export interface RPCOptions {
    *
    * If `null` is returned, or if this function is not specified, the `clientId` will be set to a uuid
    */
-  clientAdded?: ClientAdded
+  clientAdded: ClientAdded
   /**
    * Called when a socket is closed.
    */
-  clientRemoved?(clientId: string): Promise<void> | void
+  clientRemoved(clientId: string): Promise<void> | void
   /**
    * The path to listen for connections at.
    * If '*' is specified, all incoming ws requests will be used
@@ -33,14 +45,5 @@ export interface RPCOptions {
   /**
    * Timeout
    */
-  timeout?: number
-}
-
-export interface ErrorResponse<T extends unknown[] = unknown[]> {
-  code: number
-  message: string
-  data?: T
-}
-
-
-export type Message = { jsonrpc?: string } & Record<string, unknown>
+  timeout: number
+}>

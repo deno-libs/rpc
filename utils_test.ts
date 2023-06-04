@@ -1,5 +1,5 @@
 import { lazyJSONParse, pathsAreEqual } from './utils.ts'
-import { assertEquals } from 'https://deno.land/std@0.181.0/testing/asserts.ts'
+import { assertEquals } from 'https://deno.land/std@0.190.0/testing/asserts.ts'
 
 Deno.test('lazyJSONParse', async (it) => {
   await it.step('should parse JSON like JSON.parse', () => {

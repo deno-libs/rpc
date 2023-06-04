@@ -1,11 +1,11 @@
-import type { JsonRpcRequest, Message } from './types.ts'
+import type { JsonRpcRequest, JsonRpcResponse } from './types.ts'
 import { makeArray } from './utils.ts'
 
 export function send(
   socket: WebSocket,
-  message: Message | Message[],
+  message: JsonRpcResponse | JsonRpcResponse[],
 ): void {
-  const messages = makeArray<Message>(message)
+  const messages = makeArray<JsonRpcResponse>(message)
   messages.forEach((message) => {
     message.jsonrpc = '2.0'
     if (messages.length === 1) socket.send(JSON.stringify(message))
@@ -19,14 +19,12 @@ export function parseRequest(
   try {
     const arr = makeArray(JSON.parse(json))
     const res: (JsonRpcRequest | 'invalid')[] = []
-
     for (const obj of arr) {
       if (
         typeof obj !== 'object' || !obj || obj.jsonrpc !== '2.0' ||
         typeof obj.method !== 'string'
-      ) {
-        res.push('invalid')
-      } else res.push(obj)
+      ) res.push('invalid')
+      else res.push(obj)
     }
 
     if (!res.length) return ['invalid']

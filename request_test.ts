@@ -1,5 +1,5 @@
-import { parseRequest } from './request.ts'
-import { assertEquals } from 'https://deno.land/std@0.190.0/testing/asserts.ts'
+import { parseRequest, send } from './request.ts'
+import { assertEquals } from '@std/assert'
 
 Deno.test('parseRequest', async (t) => {
   await t.step('Returns an error if not object', () => {
@@ -24,5 +24,39 @@ Deno.test('parseRequest', async (t) => {
   await t.step('Properly parses valid request', () => {
     const response = { jsonrpc: '2.0', method: 'hello' }
     assertEquals(parseRequest(JSON.stringify(response)), [response])
+  })
+})
+
+Deno.test('send', async (t) => {
+  await t.step('sends a single message with jsonrpc version', () => {
+    const sent: string[] = []
+    const socket = { send: (data: string) => sent.push(data) } as unknown as WebSocket
+    send(socket, { id: '1', result: 'ok' })
+    assertEquals(sent.length, 1)
+    assertEquals(JSON.parse(sent[0]), {
+      id: '1',
+      result: 'ok',
+      jsonrpc: '2.0',
+    })
+  })
+  await t.step('sends batch messages as array', () => {
+    const sent: string[] = []
+    const socket = { send: (data: string) => sent.push(data) } as unknown as WebSocket
+    send(socket, [
+      { id: '1', result: 'a' },
+      { id: '2', result: 'b' },
+    ])
+    assertEquals(sent.length, 1)
+    const parsed = JSON.parse(sent[0])
+    assertEquals(parsed.length, 2)
+    assertEquals(parsed[0].jsonrpc, '2.0')
+    assertEquals(parsed[1].jsonrpc, '2.0')
+  })
+  await t.step('sends empty array for zero messages', () => {
+    const sent: string[] = []
+    const socket = { send: (data: string) => sent.push(data) } as unknown as WebSocket
+    send(socket, [])
+    assertEquals(sent.length, 1)
+    assertEquals(JSON.parse(sent[0]), [])
   })
 })

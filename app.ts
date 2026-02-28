@@ -3,8 +3,7 @@ import type { JsonRpcResponse, RPCOptions } from './types.ts'
 import { lazyJSONParse, paramsEncoder } from './utils.ts'
 
 export class App {
-  httpConn?: Deno.HttpConn
-  listener?: Deno.Listener
+  #controller?: AbortController
   options: RPCOptions
   socks: Map<string, WebSocket>
   methods: Map<
@@ -46,8 +45,10 @@ export class App {
     if (!clientId) clientId = crypto.randomUUID()
 
     if (typeof clientId === 'object') {
-      send(socket, { id: null, error: clientId.error })
-      socket.close()
+      socket.onopen = () => {
+        send(socket, { id: null, error: clientId.error })
+        socket.close()
+      }
       return response
     }
 
@@ -104,13 +105,7 @@ export class App {
    * @param data Received data
    */
   async #handleRPCMethod(client: string, data: string) {
-    const sock = this.socks.get(client)
-
-    if (!sock) {
-      return console.warn(
-        `Warn: recieved a request from and undefined connection`,
-      )
-    }
+    const sock = this.socks.get(client)!
     const requests = parseRequest(data)
     if (requests === 'parse-error') {
       return send(sock, {
@@ -138,7 +133,7 @@ export class App {
             id: request.id!,
           })
         }
-        const result = await handler(request.params, client)
+        const result = await handler(request.params || [], client)
         responses.push({ id: request.id!, result })
       } else {
         // It's an emitter
@@ -154,7 +149,7 @@ export class App {
         // Because emitters can return a value at any time, we are going to have to send messages on their schedule.
         // This may break batches, but I don't think that is a big deal
         handler(
-          request.params,
+          request.params || [],
           (data) => {
             send(sock, { result: data, id: request.id || null })
           },
@@ -170,28 +165,28 @@ export class App {
 
   /**
    * Start a websocket server and listen it on a specified host/port
-   * @param options `Deno.listen` options
+   * @param options `Deno.ServeOptions` options
    * @param cb Callback that triggers after HTTP server is started
    */
-  async listen(options: Deno.ListenOptions, cb?: (addr: Deno.NetAddr) => void) {
-    const listener = Deno.listen(options)
-    cb?.(listener.addr as Deno.NetAddr)
-
-    for await (const conn of listener) {
-      const requests = Deno.serveHttp(conn)
-      for await (const { request, respondWith } of requests) {
-        const response = await this.handle(request)
-        if (response) {
-          respondWith(response)
-        }
-      }
-    }
+  listen(
+    options: { port?: number; hostname?: string },
+    cb?: (addr: Deno.NetAddr) => void,
+  ) {
+    this.#controller = new AbortController()
+    Deno.serve(
+      {
+        port: options.port,
+        hostname: options.hostname,
+        signal: this.#controller.signal,
+        onListen: (addr) => cb?.(addr),
+      },
+      (req) => this.handle(req) || new Response(null, { status: 400 }),
+    )
   }
   /**
    * Close the server
    */
   close() {
-    this.httpConn?.close()
-    this.listener?.close()
+    this.#controller?.abort()
   }
 }

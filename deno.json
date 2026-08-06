@@ -1,4 +1,14 @@
 {
+  "name": "@deno-libs/rpc",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": "./mod.ts",
+  "tasks": {
+    "test": "deno test --allow-net=localhost,0.0.0.0 --coverage=coverage"
+  },
+  "publish": {
+    "exclude": [".claude", ".vscode", ".github", "example", "**/*_test.ts"]
+  },
   "fmt": {
     "useTabs": false,
     "lineWidth": 80,

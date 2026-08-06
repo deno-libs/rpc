@@ -2,7 +2,6 @@
 
 # rpc
 
-[![nest badge][nest-badge]](https://nest.land/package/rpc/mod.ts)
 [![][docs-badge]][docs] [![][code-quality-img]][code-quality]
 
 </div>
@@ -35,4 +34,3 @@ See client-server example [here](/example)
 [docs]: https://jsr.io/@deno-libs/rpc
 [code-quality-img]: https://img.shields.io/codefactor/grade/github/deno-libs/rpc?style=for-the-badge&color=black&
 [code-quality]: https://www.codefactor.io/repository/github/deno-libs/rpc
-[nest-badge]: https://img.shields.io/badge/publushed%20on-nest.land-black?style=for-the-badge

@@ -25,7 +25,13 @@ function startServer(
             },
           }),
       },
-      (req) => app.handle(req) || new Response(null, { status: 400 }),
+      async (req) => {
+        try {
+          return await app.handle(req)
+        } catch {
+          return new Response(null, { status: 400 })
+        }
+      },
     )
   })
 }
@@ -103,6 +109,24 @@ Deno.test(
 
     ws.close()
     await delay(50)
+    app.close()
+    await delay(50)
+  },
+)
+
+Deno.test(
+  'App.listen - non-upgradable request responds with 400',
+  sanitize,
+  async () => {
+    const app = new App({ timeout: 500 })
+    app.listen({ port: 9201 })
+
+    await delay(50)
+
+    const res = await fetch('http://localhost:9201')
+    await res.body?.cancel()
+    assertEquals(res.status, 400)
+
     app.close()
     await delay(50)
   },
@@ -694,6 +718,42 @@ Deno.test(
       const serverSocket = app.socks.get('err-test2')!
       serverSocket.onerror!(new Event('error'))
       await delay(50)
+
+      ws.close()
+      await delay(50)
+    } finally {
+      server.close()
+      await delay(50)
+    }
+  },
+)
+
+Deno.test(
+  'App.handle - emitter call without id',
+  sanitize,
+  async () => {
+    const app = new App({ timeout: 500 })
+    app.emitters.set('emit:', (_params, emit) => {
+      emit('anonymous')
+    })
+
+    const server = await startServer(app, 9120)
+
+    try {
+      const ws = await connectClient(9120)
+      const msgPromise = waitForMessage(ws)
+
+      ws.send(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'emit:',
+          params: [],
+        }),
+      )
+
+      const response = JSON.parse(await msgPromise)
+      assertEquals(response.result, 'anonymous')
+      assertEquals(response.id, null)
 
       ws.close()
       await delay(50)

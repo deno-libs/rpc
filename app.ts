@@ -27,7 +27,7 @@ export class App {
    * @param request request object
    * @returns response object
    */
-  async handle(request: Request) {
+  async handle(request: Request): Promise<Response> {
     const { socket, response } = Deno.upgradeWebSocket(request)
 
     const protocolHeader = request.headers.get('sec-websocket-protocol')
@@ -180,7 +180,13 @@ export class App {
         signal: this.#controller.signal,
         onListen: (addr) => cb?.(addr),
       },
-      (req) => this.handle(req) || new Response(null, { status: 400 }),
+      async (req) => {
+        try {
+          return await this.handle(req)
+        } catch {
+          return new Response(null, { status: 400 })
+        }
+      },
     )
   }
   /**
